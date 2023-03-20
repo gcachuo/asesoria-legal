@@ -8,6 +8,7 @@ import {
 } from "@react-navigation/native";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth/react-native";
+import HomeStackNavigator from "./HomeStackNavigator";
 
 const Drawer = createDrawerNavigator();
 
@@ -40,6 +41,15 @@ const DrawerNavigator = () => {
           component={LoginScreen}
           initialParams={{ isLoggedIn }}
         />
+      )}
+      {isLoggedIn && (
+        <Drawer.Group>
+          <Drawer.Screen
+            name="Home"
+            component={HomeStackNavigator}
+            options={{ title: "Inicio" }}
+          />
+        </Drawer.Group>
       )}
     </Drawer.Navigator>
   );
