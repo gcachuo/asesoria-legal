@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { getDatabase, onValue, push, ref } from "firebase/database";
 import { Button } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
 import { User } from "firebase/auth/react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 function enviarMensaje(user: User | null, mensaje: string) {
   const mensajesRef = ref(getDatabase(), "mensajes");
@@ -34,15 +35,24 @@ function escucharMensajes(callback: (nuevosMensajes: any) => void) {
 function ChatScreen() {
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
+  const flatListRef = useRef<FlatList>(null);
 
   const { user } = useAuth();
 
-  useEffect(() => {
-    // Escuchar los nuevos mensajes en tiempo real
-    escucharMensajes((nuevosMensajes) => {
-      setMensajes(nuevosMensajes);
-    });
-  }, []);
+  const scrollToBottom = () => {
+    if (flatListRef.current && mensajes.length > 0) {
+      flatListRef.current.scrollToEnd();
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Escuchar los nuevos mensajes en tiempo real
+      escucharMensajes((nuevosMensajes) => {
+        setMensajes(nuevosMensajes);
+      });
+    }, [])
+  );
 
   function handleEnviarMensaje() {
     if (mensaje) {
@@ -57,11 +67,15 @@ function ChatScreen() {
     <View style={styles.container}>
       <Text style={styles.titulo}>Chat para Abogados</Text>
       <FlatList
+        ref={flatListRef}
         data={mensajes}
         keyExtractor={(item, index) => index.toString()}
+        ListEmptyComponent={() => <Text>No hay mensajes para mostrar.</Text>}
+        onContentSizeChange={scrollToBottom}
         renderItem={({
           item,
         }: {
+          index: number;
           item: { text: string; sender: { name: string } };
         }) => {
           return (

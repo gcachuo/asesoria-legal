@@ -7,9 +7,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:android": "rm -rf ./build/*.apk && eas build --platform android --local",
+    "build:android": "rm -rf ./*.apk && eas build --platform android --local",
     "build:ios": "eas build --platform ios --local",
-    "update": "eas update --branch production"
+    "update": "eas update --branch production",
+    "install:android": "adb install build-*.apk"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.17.11",

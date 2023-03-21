@@ -9,6 +9,8 @@ import {
 
 import { getAuth, onAuthStateChanged } from "firebase/auth/react-native";
 import HomeStackNavigator from "./HomeStackNavigator";
+import ChatScreen from "../screens/ChatScreen";
+import MyAccountScreen from "../screens/MyAccountScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -48,6 +50,16 @@ const DrawerNavigator = () => {
             name="Home"
             component={HomeStackNavigator}
             options={{ title: "Inicio" }}
+          />
+          <Drawer.Screen
+            name="Chat"
+            component={ChatScreen}
+            options={{ title: "Chat" }}
+          />
+          <Drawer.Screen
+            name="MyAccount"
+            component={MyAccountScreen}
+            options={{ title: "Mi Cuenta" }}
           />
         </Drawer.Group>
       )}
