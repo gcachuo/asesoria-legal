@@ -16,6 +16,11 @@ export default function HomeScreen() {
       <Grid
         tiles={[
           {
+            title: "Chat",
+            icon: "account",
+            onPress: () => navigation.navigate("Chat"),
+          },
+          {
             title: "Salir",
             icon: "logout",
             onPress: async () => {
