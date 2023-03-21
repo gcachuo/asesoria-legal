@@ -14,7 +14,7 @@ export default function App() {
   return (
     <AuthProvider>
       <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
           <NavigationContainer>
             <DrawerNavigator />
           </NavigationContainer>
