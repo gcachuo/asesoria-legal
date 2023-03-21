@@ -6,8 +6,11 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import DrawerNavigator from "./navigation/DrawerNavigator";
 import { AuthProvider } from "./hooks/useAuth";
+import { useAppUpdate } from "./hooks/useAppUpdate";
 
 export default function App() {
+  useAppUpdate();
+
   return (
     <AuthProvider>
       <SafeAreaView style={{ flex: 1 }}>
