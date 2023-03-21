@@ -14,6 +14,7 @@ import {
   getFirestore,
   query,
   QuerySnapshot,
+  where,
 } from "firebase/firestore";
 import { Avatar } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
@@ -33,10 +34,9 @@ export default function ContactsScreen() {
       if (user) {
         const userData = await getDoc(doc(getFirestore(), "users", user?.uid));
 
-        console.log(userData.id);
-
         const usersRef = query(
-          collection(getFirestore(), "users") // where("lawyer", "!=", userData.data()?.lawyer)
+          collection(getFirestore(), "users"),
+          where("lawyer", "!=", userData.data()?.lawyer)
         );
         const snapshot: QuerySnapshot = await getDocs(usersRef);
         const data = snapshot.docs

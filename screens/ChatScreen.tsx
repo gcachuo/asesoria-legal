@@ -4,19 +4,19 @@ import { Button } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
 import { User } from "firebase/auth/react-native";
 import { RouteProp, useFocusEffect, useRoute } from "@react-navigation/native";
-import {
-  equalTo,
-  getDatabase,
-  onValue,
-  orderByChild,
-  push,
-  query,
-  ref,
-} from "firebase/database";
-import { doc, getDoc, getFirestore } from "firebase/firestore";
+import { getDatabase, onValue, push, ref } from "firebase/database";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import BackButton from "../components/BackButton";
+import firebase from "firebase/compat";
+import DocumentData = firebase.firestore.DocumentData;
 
-function enviarMensaje(user: User | null, recipient: string, mensaje: string) {
-  const mensajesRef = ref(getDatabase(), "mensajes");
+function enviarMensaje(
+  chat: string,
+  user: User | null,
+  recipient: string,
+  mensaje: string
+) {
+  const mensajesRef = ref(getDatabase(), "mensajes/" + chat);
   push(mensajesRef, {
     text: mensaje,
     senderId: user?.uid,
@@ -28,20 +28,11 @@ function enviarMensaje(user: User | null, recipient: string, mensaje: string) {
 
 // Escuchar los nuevos mensajes en tiempo real
 function escucharMensajes(
+  chat: string,
   recipient: string,
   callback: (nuevosMensajes: any) => void
 ) {
-  const mensajesRef = ref(getDatabase(), "mensajes");
-  const mensajesQuery = query(
-    mensajesRef,
-    orderByChild("recipient"),
-    equalTo(recipient)
-  );
-  const mensajesQuery2 = query(
-    mensajesRef,
-    orderByChild("senderId"),
-    equalTo(recipient)
-  );
+  const mensajesRef = ref(getDatabase(), "mensajes/" + chat);
   onValue(mensajesRef, (snapshot) => {
     const mensajes: any[] = [];
     snapshot.forEach((childSnapshot) => {
@@ -53,7 +44,9 @@ function escucharMensajes(
 }
 
 function ChatScreen() {
-  const [recipient, setRecipient] = useState("");
+  const [chat, setChat] = useState("");
+  const [recipient, setRecipient] = useState<DocumentData>({});
+  const [recipientId, setRecipientId] = useState<string>("");
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
   const flatListRef = useRef<FlatList>(null);
@@ -69,11 +62,43 @@ function ChatScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      setRecipient(route.params.contact);
       getDoc(doc(getFirestore(), "users", route.params.contact)).then(
-        (value) => {
+        async (value) => {
+          setRecipientId(value.id);
+          setRecipient(value.data()!);
+
+          const data = await getDoc(doc(getFirestore(), "chats", user!.uid));
+          if (!data.data()) {
+            await setDoc(
+              doc(getFirestore(), "chats", user!.uid),
+              {
+                chats: {
+                  [route.params.contact]: {
+                    name: `${route.params.contact}:${user?.uid}`,
+                    recipient: route.params.contact,
+                  },
+                },
+              },
+              { merge: true }
+            );
+            await setDoc(
+              doc(getFirestore(), "chats", route.params.contact),
+              {
+                chats: {
+                  [user!.uid]: {
+                    name: `${route.params.contact}:${user?.uid}`,
+                    recipient: user?.uid,
+                  },
+                },
+              },
+              { merge: true }
+            );
+          }
+          const chat = data.data()?.chats[route.params.contact].name;
+          setChat(chat);
+
           // Escuchar los nuevos mensajes en tiempo real
-          escucharMensajes(value.id, (nuevosMensajes) => {
+          escucharMensajes(chat, value.id, (nuevosMensajes) => {
             setMensajes(nuevosMensajes);
           });
         }
@@ -84,43 +109,54 @@ function ChatScreen() {
   function handleEnviarMensaje() {
     if (mensaje) {
       // Agregar el nuevo mensaje a Firebase
-      enviarMensaje(user, recipient, mensaje);
+      enviarMensaje(chat, user, recipientId, mensaje);
       // Limpiar el campo de texto del mensaje
       setMensaje("");
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>Chat para Abogados</Text>
-      <FlatList
-        ref={flatListRef}
-        data={mensajes}
-        keyExtractor={(item, index) => index.toString()}
-        ListEmptyComponent={() => <Text>No hay mensajes para mostrar.</Text>}
-        onContentSizeChange={scrollToBottom}
-        renderItem={({
-          item,
-        }: {
-          index: number;
-          item: { text: string; senderName: string };
-        }) => {
-          return (
-            <View style={styles.mensaje}>
-              <Text style={styles.nombre}>{item.senderName}</Text>
-              <Text style={styles.texto}>{item.text}</Text>
-            </View>
-          );
+    <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Mensaje"
-          value={mensaje}
-          onChangeText={setMensaje}
+      >
+        <BackButton />
+        <Text style={styles.titulo}>{recipient.name}</Text>
+      </View>
+      <View style={styles.container}>
+        <FlatList
+          ref={flatListRef}
+          data={mensajes}
+          keyExtractor={(item, index) => index.toString()}
+          ListEmptyComponent={() => <Text>No hay mensajes para mostrar.</Text>}
+          onContentSizeChange={scrollToBottom}
+          renderItem={({
+            item,
+          }: {
+            index: number;
+            item: { text: string; senderName: string };
+          }) => {
+            return (
+              <View style={styles.mensaje}>
+                <Text style={styles.nombre}>{item.senderName}</Text>
+                <Text style={styles.texto}>{item.text}</Text>
+              </View>
+            );
+          }}
         />
-        <Button onPress={handleEnviarMensaje}>Enviar</Button>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Mensaje"
+            value={mensaje}
+            onChangeText={setMensaje}
+          />
+          <Button onPress={handleEnviarMensaje}>Enviar</Button>
+        </View>
       </View>
     </View>
   );
@@ -135,9 +171,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   titulo: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    paddingRight: 30,
   },
   mensaje: {
     padding: 10,
