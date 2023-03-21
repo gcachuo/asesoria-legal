@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Card, Title, TouchableRipple } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-export type TileIcon = "logout" | "account" | "qrcode";
+export type TileIcon = "logout" | "account" | "qrcode" | "message";
 
 type Props = {
   title: string;
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     width: 110,
     textAlign: "center",
     justifyContent: "center",
-    alignItems:'center'
+    alignItems: "center",
   },
   container: {
     flex: 1,

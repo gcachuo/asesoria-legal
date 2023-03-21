@@ -129,7 +129,7 @@ export default function LoginScreen() {
           {error && <Text style={{ color: "red" }}>{error}</Text>}
           <Button onPress={handleLogin}>Inicia Sesión</Button>
           <Button onPress={handleResetPassword}>Olvide mi contraseña</Button>
-          {false && <Button onPress={handleSignUp}>Registrate</Button>}
+          {true && <Button onPress={handleSignUp}>Registrate</Button>}
         </>
       )}
       <StatusBar />

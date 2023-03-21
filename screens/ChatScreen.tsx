@@ -3,10 +3,19 @@ import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { getDatabase, onValue, push, ref } from "firebase/database";
 import { Button } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
+import { User } from "firebase/auth/react-native";
 
-function enviarMensaje(nombre: string, mensaje: string) {
+function enviarMensaje(user: User | null, mensaje: string) {
   const mensajesRef = ref(getDatabase(), "mensajes");
-  push(mensajesRef, { nombre, mensaje });
+  push(mensajesRef, {
+    text: mensaje,
+    sender: {
+      uid: user?.uid,
+      name: user?.displayName,
+    },
+    recipient: "DESTINATARIO_UID",
+    timestamp: Date.now(),
+  });
 }
 
 // Escuchar los nuevos mensajes en tiempo real
@@ -25,6 +34,7 @@ function escucharMensajes(callback: (nuevosMensajes: any) => void) {
 function ChatScreen() {
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -35,10 +45,9 @@ function ChatScreen() {
   }, []);
 
   function handleEnviarMensaje() {
-    const nombre = user?.email;
-    if (nombre && mensaje) {
+    if (mensaje) {
       // Agregar el nuevo mensaje a Firebase
-      enviarMensaje(nombre, mensaje);
+      enviarMensaje(user, mensaje);
       // Limpiar el campo de texto del mensaje
       setMensaje("");
     }
@@ -50,12 +59,18 @@ function ChatScreen() {
       <FlatList
         data={mensajes}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.mensaje}>
-            <Text style={styles.nombre}>{item.nombre}</Text>
-            <Text style={styles.texto}>{item.mensaje}</Text>
-          </View>
-        )}
+        renderItem={({
+          item,
+        }: {
+          item: { text: string; sender: { name: string } };
+        }) => {
+          return (
+            <View style={styles.mensaje}>
+              <Text style={styles.nombre}>{item.sender.name}</Text>
+              <Text style={styles.texto}>{item.text}</Text>
+            </View>
+          );
+        }}
       />
       <View style={styles.inputContainer}>
         <TextInput

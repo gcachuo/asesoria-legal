@@ -17,8 +17,13 @@ export default function HomeScreen() {
         tiles={[
           {
             title: "Chat",
-            icon: "account",
+            icon: "message",
             onPress: () => navigation.navigate("Chat"),
+          },
+          {
+            title: "Mi Cuenta",
+            icon: "account",
+            onPress: () => navigation.navigate("MyAccount"),
           },
           {
             title: "Salir",
