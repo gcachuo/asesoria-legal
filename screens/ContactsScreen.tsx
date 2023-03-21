@@ -33,6 +33,7 @@ export default function ContactsScreen() {
     const getUsers = async () => {
       if (user) {
         const userData = await getDoc(doc(getFirestore(), "users", user?.uid));
+        const chatsData = await getDoc(doc(getFirestore(), "chats", user?.uid));
 
         const usersRef = query(
           collection(getFirestore(), "users"),
@@ -46,7 +47,10 @@ export default function ContactsScreen() {
             phoneNumber: doc.data().phoneNumber,
             photoURL: doc.data().photoURL,
           }))
-          .filter((x) => x.id != userData.id);
+          .filter((x) => x.id != userData.id)
+          .filter(
+            (x) => !userData.data()?.lawyer || chatsData.data()?.chats[x.id]
+          );
         setContactos(data);
       }
     };
