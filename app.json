@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "asesoria-legal",
+    "name": "Asesoría Legal",
     "slug": "asesoria-legal",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,10 +21,22 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.gcachuo.asesorialegal"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a3822001-b76e-4fc2-b95a-e8b4e2094dd4"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a3822001-b76e-4fc2-b95a-e8b4e2094dd4"
     }
   }
 }
