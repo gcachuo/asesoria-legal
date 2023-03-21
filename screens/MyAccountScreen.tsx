@@ -49,6 +49,7 @@ export default function MyAccountScreen() {
           name: user.displayName,
           phoneNumber: editedData.phoneNumber,
           photoURL: editedData.photoURL,
+          lawyer: false,
         });
         setPhoneNumber(editedData.phoneNumber);
 
