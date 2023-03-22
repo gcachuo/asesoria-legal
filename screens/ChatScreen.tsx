@@ -1,27 +1,38 @@
 import React, { useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
-import { getDatabase, onValue, push, ref } from "firebase/database";
 import { Button } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
 import { User } from "firebase/auth/react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { RouteProp, useFocusEffect, useRoute } from "@react-navigation/native";
+import { getDatabase, onValue, push, ref } from "firebase/database";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import BackButton from "../components/BackButton";
+import firebase from "firebase/compat";
+import DocumentData = firebase.firestore.DocumentData;
 
-function enviarMensaje(user: User | null, mensaje: string) {
-  const mensajesRef = ref(getDatabase(), "mensajes");
+function enviarMensaje(
+  chat: string,
+  user: User | null,
+  recipient: string,
+  mensaje: string
+) {
+  const mensajesRef = ref(getDatabase(), "mensajes/" + chat);
   push(mensajesRef, {
     text: mensaje,
-    sender: {
-      uid: user?.uid,
-      name: user?.displayName,
-    },
-    recipient: "DESTINATARIO_UID",
+    senderId: user?.uid,
+    senderName: user?.displayName,
+    recipient: recipient,
     timestamp: Date.now(),
   });
 }
 
 // Escuchar los nuevos mensajes en tiempo real
-function escucharMensajes(callback: (nuevosMensajes: any) => void) {
-  const mensajesRef = ref(getDatabase(), "mensajes");
+function escucharMensajes(
+  chat: string,
+  recipient: string,
+  callback: (nuevosMensajes: any) => void
+) {
+  const mensajesRef = ref(getDatabase(), "mensajes/" + chat);
   onValue(mensajesRef, (snapshot) => {
     const mensajes: any[] = [];
     snapshot.forEach((childSnapshot) => {
@@ -33,9 +44,13 @@ function escucharMensajes(callback: (nuevosMensajes: any) => void) {
 }
 
 function ChatScreen() {
+  const [chat, setChat] = useState("");
+  const [recipient, setRecipient] = useState<DocumentData>({});
+  const [recipientId, setRecipientId] = useState<string>("");
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
   const flatListRef = useRef<FlatList>(null);
+  const route = useRoute<RouteProp<{ params: { contact: string } }>>();
 
   const { user } = useAuth();
 
@@ -47,54 +62,112 @@ function ChatScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Escuchar los nuevos mensajes en tiempo real
-      escucharMensajes((nuevosMensajes) => {
-        setMensajes(nuevosMensajes);
-      });
-    }, [])
+      getDoc(doc(getFirestore(), "users", route.params.contact)).then(
+        async (value) => {
+          setRecipientId(value.id);
+          setRecipient(value.data()!);
+
+          const data = await getDoc(doc(getFirestore(), "chats", user!.uid));
+          let chat;
+          if (!data.data()?.chats[route.params.contact]) {
+            await setDoc(
+              doc(getFirestore(), "chats", user!.uid),
+              {
+                chats: {
+                  [route.params.contact]: {
+                    name: `${route.params.contact}:${user?.uid}`,
+                    recipient: route.params.contact,
+                  },
+                },
+              },
+              { merge: true }
+            );
+            await setDoc(
+              doc(getFirestore(), "chats", route.params.contact),
+              {
+                chats: {
+                  [user!.uid]: {
+                    name: `${route.params.contact}:${user?.uid}`,
+                    recipient: user?.uid,
+                  },
+                },
+              },
+              { merge: true }
+            );
+            chat = `${route.params.contact}:${user?.uid}`;
+          } else {
+            chat = data.data()?.chats[route.params.contact].name;
+          }
+
+          setChat(chat);
+
+          // Escuchar los nuevos mensajes en tiempo real
+          escucharMensajes(chat, value.id, (nuevosMensajes) => {
+            setMensajes(nuevosMensajes);
+          });
+        }
+      );
+    }, [route.params.contact])
   );
 
   function handleEnviarMensaje() {
-    if (mensaje) {
+    if (mensaje && chat) {
       // Agregar el nuevo mensaje a Firebase
-      enviarMensaje(user, mensaje);
+      enviarMensaje(chat, user, recipientId, mensaje);
       // Limpiar el campo de texto del mensaje
       setMensaje("");
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>Chat para Abogados</Text>
-      <FlatList
-        ref={flatListRef}
-        data={mensajes}
-        keyExtractor={(item, index) => index.toString()}
-        ListEmptyComponent={() => <Text>No hay mensajes para mostrar.</Text>}
-        onContentSizeChange={scrollToBottom}
-        renderItem={({
-          item,
-        }: {
-          index: number;
-          item: { text: string; sender: { name: string } };
-        }) => {
-          return (
-            <View style={styles.mensaje}>
-              <Text style={styles.nombre}>{item.sender.name}</Text>
-              <Text style={styles.texto}>{item.text}</Text>
-            </View>
-          );
+    <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Mensaje"
-          value={mensaje}
-          onChangeText={setMensaje}
-        />
-        <Button onPress={handleEnviarMensaje}>Enviar</Button>
+      >
+        <BackButton />
+        <Text style={styles.titulo}>{recipient.name}</Text>
       </View>
+      {chat && (
+        <>
+          <View style={styles.container}>
+            <FlatList
+              ref={flatListRef}
+              data={mensajes}
+              keyExtractor={(item, index) => index.toString()}
+              ListEmptyComponent={() => (
+                <Text>No hay mensajes para mostrar.</Text>
+              )}
+              onContentSizeChange={scrollToBottom}
+              renderItem={({
+                item,
+              }: {
+                index: number;
+                item: { text: string; senderName: string };
+              }) => {
+                return (
+                  <View style={styles.mensaje}>
+                    <Text style={styles.nombre}>{item.senderName}</Text>
+                    <Text style={styles.texto}>{item.text}</Text>
+                  </View>
+                );
+              }}
+            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Mensaje"
+                value={mensaje}
+                onChangeText={setMensaje}
+              />
+              <Button onPress={handleEnviarMensaje}>Enviar</Button>
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -108,9 +181,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   titulo: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    paddingRight: 30,
   },
   mensaje: {
     padding: 10,
@@ -127,6 +200,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    paddingBottom: 20,
   },
   input: {
     flex: 1,

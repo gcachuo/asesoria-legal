@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import {
   NavigationProp,
   ParamListBase,
@@ -7,12 +7,14 @@ import {
 } from "@react-navigation/native";
 import Grid from "../components/Grid";
 import { getAuth, signOut } from "firebase/auth/react-native";
+import manifest from "../app.json";
 
 export default function HomeScreen() {
   const navigation: NavigationProp<ParamListBase> = useNavigation();
 
   return (
     <View style={styles.container}>
+      <Text style={{ opacity: 0.2 }}>v{manifest.expo.version}</Text>
       <Grid
         tiles={[
           {
