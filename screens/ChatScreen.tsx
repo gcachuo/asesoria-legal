@@ -68,9 +68,9 @@ function ChatScreen() {
           setRecipient(value.data()!);
 
           const data = await getDoc(doc(getFirestore(), "chats", user!.uid));
-          let chat = data.data()?.chats[route.params.contact].name;
-          if (!data.data()) {
-            const missingChat = await setDoc(
+          let chat;
+          if (!data.data()?.chats[route.params.contact]) {
+            await setDoc(
               doc(getFirestore(), "chats", user!.uid),
               {
                 chats: {
@@ -95,7 +95,10 @@ function ChatScreen() {
               { merge: true }
             );
             chat = `${route.params.contact}:${user?.uid}`;
+          } else {
+            chat = data.data()?.chats[route.params.contact].name;
           }
+
           setChat(chat);
 
           // Escuchar los nuevos mensajes en tiempo real
