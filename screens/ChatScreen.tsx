@@ -68,8 +68,9 @@ function ChatScreen() {
           setRecipient(value.data()!);
 
           const data = await getDoc(doc(getFirestore(), "chats", user!.uid));
+          let chat = data.data()?.chats[route.params.contact].name;
           if (!data.data()) {
-            await setDoc(
+            const missingChat = await setDoc(
               doc(getFirestore(), "chats", user!.uid),
               {
                 chats: {
@@ -93,8 +94,8 @@ function ChatScreen() {
               },
               { merge: true }
             );
+            chat = `${route.params.contact}:${user?.uid}`;
           }
-          const chat = data.data()?.chats[route.params.contact].name;
           setChat(chat);
 
           // Escuchar los nuevos mensajes en tiempo real
@@ -107,7 +108,7 @@ function ChatScreen() {
   );
 
   function handleEnviarMensaje() {
-    if (mensaje) {
+    if (mensaje && chat) {
       // Agregar el nuevo mensaje a Firebase
       enviarMensaje(chat, user, recipientId, mensaje);
       // Limpiar el campo de texto del mensaje
@@ -127,37 +128,43 @@ function ChatScreen() {
         <BackButton />
         <Text style={styles.titulo}>{recipient.name}</Text>
       </View>
-      <View style={styles.container}>
-        <FlatList
-          ref={flatListRef}
-          data={mensajes}
-          keyExtractor={(item, index) => index.toString()}
-          ListEmptyComponent={() => <Text>No hay mensajes para mostrar.</Text>}
-          onContentSizeChange={scrollToBottom}
-          renderItem={({
-            item,
-          }: {
-            index: number;
-            item: { text: string; senderName: string };
-          }) => {
-            return (
-              <View style={styles.mensaje}>
-                <Text style={styles.nombre}>{item.senderName}</Text>
-                <Text style={styles.texto}>{item.text}</Text>
-              </View>
-            );
-          }}
-        />
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Mensaje"
-            value={mensaje}
-            onChangeText={setMensaje}
-          />
-          <Button onPress={handleEnviarMensaje}>Enviar</Button>
-        </View>
-      </View>
+      {chat && (
+        <>
+          <View style={styles.container}>
+            <FlatList
+              ref={flatListRef}
+              data={mensajes}
+              keyExtractor={(item, index) => index.toString()}
+              ListEmptyComponent={() => (
+                <Text>No hay mensajes para mostrar.</Text>
+              )}
+              onContentSizeChange={scrollToBottom}
+              renderItem={({
+                item,
+              }: {
+                index: number;
+                item: { text: string; senderName: string };
+              }) => {
+                return (
+                  <View style={styles.mensaje}>
+                    <Text style={styles.nombre}>{item.senderName}</Text>
+                    <Text style={styles.texto}>{item.text}</Text>
+                  </View>
+                );
+              }}
+            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Mensaje"
+                value={mensaje}
+                onChangeText={setMensaje}
+              />
+              <Button onPress={handleEnviarMensaje}>Enviar</Button>
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
