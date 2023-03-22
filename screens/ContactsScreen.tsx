@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -12,51 +12,96 @@ import {
   getDoc,
   getDocs,
   getFirestore,
-  query,
+  query as queryStore,
   QuerySnapshot,
   where,
 } from "firebase/firestore";
 import { Avatar } from "react-native-paper";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import {
+  endAt,
+  getDatabase,
+  onValue,
+  orderByKey,
+  query as queryDB,
+  ref,
+  startAt,
+} from "firebase/database";
 
 export default function ContactsScreen() {
   const { user } = useAuth();
   const [contactos, setContactos] = useState<any[]>([]);
+  const [lawyerContacts, setLawyerContacts] = useState<any[]>([]);
   const navigation: StackNavigationProp<
     { ChatScreen: { contact: string } },
     "ChatScreen"
   > = useNavigation();
 
-  useEffect(() => {
-    const getUsers = async () => {
+  useFocusEffect(
+    React.useCallback(() => {
       if (user) {
-        const userData = await getDoc(doc(getFirestore(), "users", user?.uid));
-        const chatsData = await getDoc(doc(getFirestore(), "chats", user?.uid));
+        const mensajesRef = ref(getDatabase(), "mensajes");
+        onValue(
+          queryDB(
+            mensajesRef,
+            orderByKey(),
+            startAt(user.uid),
+            endAt("\uf8ff")
+          ),
+          (snapshot) => {
+            // Obtener los datos del snapshot
+            const data = snapshot.val();
 
-        const usersRef = query(
-          collection(getFirestore(), "users"),
-          where("lawyer", "!=", userData.data()?.lawyer)
+            // Hacer algo con los datos
+            if (data) {
+              const contacts = Object.keys(data)
+                .filter((x) => x.includes(user.uid))
+                .map((x) => x.split(user.uid + ":")[1]);
+              setLawyerContacts(contacts);
+            } else {
+              setLawyerContacts([]);
+            }
+          }
         );
-        const snapshot: QuerySnapshot = await getDocs(usersRef);
-        const data = snapshot.docs
-          .map((doc, uid) => ({
-            id: doc.id,
-            name: doc.data().name,
-            phoneNumber: doc.data().phoneNumber,
-            photoURL: doc.data().photoURL,
-          }))
-          .filter((x) => x.id != userData.id)
-          .filter(
-            (x) => !userData.data()?.lawyer || chatsData.data()?.chats[x.id]
-          );
-        setContactos(data);
       }
-    };
+    }, [])
+  );
+  useFocusEffect(
+    React.useCallback(() => {
+      const getUsers = async () => {
+        if (user) {
+          const userData = await getDoc(
+            doc(getFirestore(), "users", user?.uid)
+          );
+          const chatsData = await getDoc(
+            doc(getFirestore(), "chats", user?.uid)
+          );
 
-    getUsers();
-  }, []);
+          const usersRef = queryStore(
+            collection(getFirestore(), "users"),
+            where("lawyer", "!=", userData.data()?.lawyer)
+          );
+          const snapshot: QuerySnapshot = await getDocs(usersRef);
+          const data = snapshot.docs
+            .map((doc, uid) => ({
+              id: doc.id,
+              name: doc.data().name,
+              phoneNumber: doc.data().phoneNumber,
+              photoURL: doc.data().photoURL,
+            }))
+            .filter((x) => x.id != userData.id)
+            .filter(
+              (x) => !userData.data()?.lawyer || lawyerContacts.includes(x.id)
+            );
+          setContactos(data);
+        }
+      };
+
+      getUsers();
+    }, [lawyerContacts])
+  );
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
