@@ -132,6 +132,9 @@ export default function ContactsScreen() {
         data={contactos}
         renderItem={renderItem}
         keyExtractor={(item: any) => item.id}
+        ListEmptyComponent={() => (
+          <Text>No hay conversaciones para mostrar.</Text>
+        )}
       />
     </View>
   );

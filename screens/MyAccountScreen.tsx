@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from "uuid";
 export default function MyAccountScreen() {
   const { user } = useAuth();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isLawyer, setLawyerStatus] = useState(false);
   const [editedData, setEditedData] = useState({
     displayName: "",
     email: "",
@@ -35,6 +36,7 @@ export default function MyAccountScreen() {
       if (user) {
         const data = await getDoc(doc(getFirestore(), "users", user.uid));
         setPhoneNumber(data.data()?.phoneNumber);
+        setLawyerStatus(data.data()?.lawyer);
       }
     })();
   }, [user]);
@@ -49,7 +51,7 @@ export default function MyAccountScreen() {
           name: user.displayName,
           phoneNumber: editedData.phoneNumber,
           photoURL: editedData.photoURL,
-          lawyer: false,
+          lawyer: isLawyer,
         });
         setPhoneNumber(editedData.phoneNumber);
 
