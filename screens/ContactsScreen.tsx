@@ -29,6 +29,7 @@ import {
   ref,
   startAt,
 } from "firebase/database";
+import BackButton from "../components/BackButton";
 
 export default function ContactsScreen() {
   const { user } = useAuth();
@@ -128,12 +129,22 @@ export default function ContactsScreen() {
 
   return (
     <View style={styles.container}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <BackButton />
+        <Text style={styles.titulo}>Conversaciones</Text>
+      </View>
       <FlatList
         data={contactos}
         renderItem={renderItem}
         keyExtractor={(item: any) => item.id}
         ListEmptyComponent={() => (
-          <Text>No hay conversaciones para mostrar.</Text>
+          <Text style={styles.titulo}>No hay conversaciones para mostrar.</Text>
         )}
       />
     </View>
@@ -141,6 +152,11 @@ export default function ContactsScreen() {
 }
 
 const styles = StyleSheet.create({
+  titulo: {
+    fontSize: 20,
+    fontWeight: "bold",
+    paddingRight: 30,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",

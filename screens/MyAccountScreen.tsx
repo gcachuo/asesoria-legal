@@ -18,6 +18,7 @@ import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 import { launchCameraAsync } from "expo-image-picker";
 import { v4 as uuidv4 } from "uuid";
+import BackButton from "../components/BackButton";
 
 export default function MyAccountScreen() {
   const { user } = useAuth();
@@ -106,6 +107,7 @@ export default function MyAccountScreen() {
           backgroundColor: "transparent",
         }}
       >
+        <BackButton />
         <TouchableWithoutFeedback
           onPress={() => {
             setEditedData({
