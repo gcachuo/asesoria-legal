@@ -11,6 +11,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth/react-native";
 import HomeStackNavigator from "./HomeStackNavigator";
 import MyAccountScreen from "../screens/MyAccountScreen";
 import ChatStackNavigator from "./ChatStackNavigator";
+import CalendarStackNavigator from "./CalendarStackNavigator";
 
 const Drawer = createDrawerNavigator();
 
@@ -55,6 +56,11 @@ const DrawerNavigator = () => {
             name="Chat"
             component={ChatStackNavigator}
             options={{ title: "Chat" }}
+          />
+          <Drawer.Screen
+            name="Calendar"
+            component={CalendarStackNavigator}
+            options={{ title: "Calendario" }}
           />
           <Drawer.Screen
             name="MyAccount"

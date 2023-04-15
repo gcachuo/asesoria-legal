@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Card, Title, TouchableRipple } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-export type TileIcon = "logout" | "account" | "qrcode" | "message";
+export type TileIcon = "logout" | "account" | "qrcode" | "message" | "calendar";
 
 type Props = {
   title: string;

@@ -23,6 +23,11 @@ export default function HomeScreen() {
             onPress: () => navigation.navigate("Chat"),
           },
           {
+            title: "Calendario",
+            icon: "calendar",
+            onPress: () => navigation.navigate("Calendar"),
+          },
+          {
             title: "Mi Cuenta",
             icon: "account",
             onPress: () => navigation.navigate("MyAccount"),
